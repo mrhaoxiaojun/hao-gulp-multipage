@@ -1,0 +1,106 @@
+@charset 'utf-8';
+ul,
+ol {
+    list-style: none outside;
+}
+
+body {
+    font: 12PX/1.6 helvetica, "微软雅黑", "microsoft yahei", Verdana, Lucida, arial, sans-serif, "黑体";
+    color: #333;
+    margin: 0 auto;
+}
+
+a {
+    text-decoration: none;
+    &:hover {
+        text-decoration: none;
+    }
+}
+
+ul,
+label,
+select,
+input,
+span,
+div,
+form,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0;
+    padding: 0;
+}
+
+input,
+textarea,
+button,
+select {
+    border: none;
+}
+
+:focus,
+:active {
+    outline: none;
+}
+
+button:hover,
+button:focus,
+input:hover,
+input:focus,
+select:hover,
+select:focus {
+    outline: none;
+}
+
+input::-ms-clear {
+    display: none;
+}
+
+input::-ms-reveal {
+    display: none;
+}
+
+.pull-right {
+    float: right !important;
+}
+
+.pull-left {
+    float: left !important;
+}
+
+.hide {
+    display: none !important;
+}
+
+.show {
+    display: block !important;
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+.clearfix:after {
+    content: " ";
+    clear: both;
+    width: 0;
+    height: 0;
+    display: table;
+    line-height: 0;
+}
+
+.text-left {
+    text-align: left !important;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.text-center {
+    text-align: center !important;
+}

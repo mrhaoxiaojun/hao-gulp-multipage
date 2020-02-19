@@ -1,0 +1,1791 @@
+@charset "utf-8";
+// retina border
+
+// 0.5px实现 ios9
+@mixin retina-one-px() {
+    @supports (border-width: 0.5px) {
+        @media only screen and (-webkit-min-device-pixel-ratio: 2), screen and (-webkit-min-device-pixel-ratio: 3) {
+            border-width: 0.5px;
+            // @content;
+        }
+    }
+}
+
+// linear-gradient实现
+// 安卓4.3- 不支持background-size的百分比
+@mixin retina-one-px-bg($direction: top, $color: $colorBorder) {
+    background-repeat: no-repeat;
+    @if $direction == top {
+        background-image: linear-gradient(to bottom, $color 50%, transparent 50%);
+        background-size: 100% 1px;
+    }
+    @if $direction == bottom {
+        background-image: linear-gradient(to top, $color 50%, transparent 50%);
+        background-size: 100% 1px;
+        background-position: left bottom;
+    }
+    @if $direction == left {
+        background-image: linear-gradient(to right, $color 50%, transparent 50%);
+        background-size: 1px 100%;
+    }
+    @if $direction == right {
+        background-image: linear-gradient(to left, $color 50%, transparent 50%);
+        background-size: 1px 100%;
+        background-position: right top;
+    }
+    @if $direction == v { // 左右两个边框
+        background-image: linear-gradient(to right, $color 50%, transparent 50%),linear-gradient(to left, $color 50%, transparent 50%);
+        background-size: 1px 100%;
+        background-position: left top, right top;
+    }
+    @if $direction == h { // 上下两个边框
+        background-image: linear-gradient(to bottom, $color 50%, transparent 50%), linear-gradient(to top, $color 50%, transparent 50%);
+        background-size: 100% 1px;
+        background-position: left top, left bottom;
+    }
+    @if $direction == all { // 上下左右四个边框
+        background-image: linear-gradient(to bottom, $color 50%, transparent 50%), linear-gradient(to top, $color 50%, transparent 50%), linear-gradient(to right, $color 50%, transparent 50%),linear-gradient(to left, $color 50%, transparent 50%);
+        background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
+        background-position: left top, left bottom, left top, right top;
+    }
+}
+
+// border和transform实现
+// 注意before和after的层级问题
+@mixin retina-one-px-border($direction: top, $color:#e5e5e5) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    box-sizing: border-box;
+
+    @if $direction == top or $direction == bottom{    
+        right: 0;
+        height: 0;
+        transform: scaleY(0.5);
+        border-top: 1px solid $color;
+    }
+    @if $direction == bottom {
+        top: auto;
+        bottom: 0;
+    }
+    @if $direction == right or $direction == left{
+        width: 0;
+        bottom: 0;
+        transform: scaleX(0.5);
+        border-left: 1px solid $color;
+    }
+    @if $direction == right {
+        left: auto;
+        right: 0;
+    }
+    @if $direction == all {
+        width: 200%;
+        height: 200%;
+        transform-origin: left top;
+        transform: scale(0.5);
+        border: 1px solid $color;
+    }
+}
+
+// border top & bottom
+%border-tb {
+    position: relative;
+    &::before {
+        content: "";
+        @include retina-one-px-border(top);
+        z-index: 1;
+    }
+    &::after {
+        content: "";
+        @include retina-one-px-border(bottom);
+    }
+}
+
+// border all
+%border-all {
+    position: relative;
+    &::before {
+        content: "";
+        @include retina-one-px-border(all);
+        z-index: -1;
+    }
+}
+
+
+@function getRem($px) {
+    @return $px/$dpi;
+}
+
+@mixin opacity($opacity:.65, $support-for-ie:true) {
+    opacity: $opacity;
+    @if $support-for-ie {
+        $opacity-ie: $opacity * 100;
+        filter: alpha(opacity=$opacity-ie); //IE8
+    }
+}
+
+// ===========================Use========================
+// .opacity{
+//   @include opacity(.8,false);
+// }
+// ============================Output======================
+// .opaticy {
+//   opacity: 0.8;
+// }
+// =======================================================
+
+
+
+
+@mixin ellipsis-overflow($line: 1, $substract: 0) {
+    @if $line==1 {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    @else {
+        display: -webkit-box;
+        -webkit-line-clamp: $line;
+        -webkit-box-orient: vertical;
+    }
+    width: 100% - $substract;
+    overflow: hidden;
+}
+
+/// Calc计算
+/// @param {String} $prop CSS属性
+/// @param {String} $val CSS属性值的表达式
+/// @example
+/// //SCSS
+/// .calc{
+///    @include calc(width,'100% - 20px');
+/// }
+/// //CSS
+/// .calc {
+///   width: calc(100% - 20px);
+/// }
+@mixin calc($prop, $val) {
+    #{$prop}: calc(#{$val});
+}
+
+// calc-percent: calculate the percent using the target ÷ context
+@function calc-percent( $target, $context) {
+    @return $target / $context * 100%;
+}
+
+// =======================Use===========================
+// .sidebar {
+//   width:calc-percent(220px,960px);
+// }
+// ========================Output=========================
+// .sidebar {
+//   width: 22.9166666667%;
+// }
+// =======================================================
+/// 绘制三角形
+/// @param {String} $position 
+/// @param {Number} $caret-width 三角形外宽度
+/// @param {Number} $border-width 三角形内宽度
+/// @param {String} $direction 三角形方向
+/// @param {String} $border-color 边框颜色
+/// @param {String} $background-color 背景颜色
+/// @example
+/// //SCSS
+/// .caret{
+///   @include caret(absolute,50px,1px,bottom,red,#ccc);
+/// }
+/// //CSS
+/// .caret {
+///     position: absolute;
+/// }
+/// .caret:before, .caret:after {
+///    content: "";
+///   `position: absolute;
+/// }
+/// .caret:before {
+///    top: 0;
+///    left: 0;
+///    border-top: 50px solid red;
+///    border-left: 50px solid transparent;
+///    border-right: 50px solid transparent;
+/// }
+/// .caret:after {
+///    left: 1px;
+///    top: 0;
+///    border-top: 49px solid #ccc;
+///    border-left: 49px solid transparent;
+///    border-right: 49px solid transparent;
+/// }
+/// @link http://lugolabs.com/caret
+@mixin caret($position, $caret-width, $border-width, $direction, $border-color, $background-color) {
+    position: $position;
+    &:before,
+    &:after {
+        content: "";
+        position: absolute;
+    }
+    @if $direction==top {
+        &:before {
+            top: 0;
+            left: 0;
+            border-bottom: $caret-width solid $border-color;
+            border-left: $caret-width solid transparent;
+            border-right: $caret-width solid transparent;
+        }
+        &:after {
+            left: $border-width;
+            top: $border-width;
+            border-bottom: ($caret-width - $border-width) solid $background-color;
+            border-left: ($caret-width - $border-width) solid transparent;
+            border-right: ($caret-width - $border-width) solid transparent;
+        }
+    }
+    @else if $direction==right {
+        &:before {
+            top: 0;
+            left: 0;
+            border-left: $caret-width solid $border-color;
+            border-top: $caret-width solid transparent;
+            border-bottom: $caret-width solid transparent;
+        }
+        &:after {
+            left: 0;
+            top: $border-width;
+            border-left: ($caret-width - $border-width) solid $background-color;
+            border-top: ($caret-width - $border-width) solid transparent;
+            border-bottom: ($caret-width - $border-width) solid transparent;
+        }
+    }
+    @else if $direction==bottom {
+        &:before {
+            top: 0;
+            left: 0;
+            border-top: $caret-width solid $border-color;
+            border-left: $caret-width solid transparent;
+            border-right: $caret-width solid transparent;
+        }
+        &:after {
+            left: $border-width;
+            top: 0;
+            border-top: ($caret-width - $border-width) solid $background-color;
+            border-left: ($caret-width - $border-width) solid transparent;
+            border-right: ($caret-width - $border-width) solid transparent;
+        }
+    }
+    @else if $direction==left {
+        &:before {
+            top: 0;
+            left: 0;
+            border-right: $caret-width solid $border-color;
+            border-top: $caret-width solid transparent;
+            border-bottom: $caret-width solid transparent;
+        }
+        &:after {
+            left: $border-width;
+            top: $border-width;
+            border-right: ($caret-width - $border-width) solid $background-color;
+            border-top: ($caret-width - $border-width) solid transparent;
+            border-bottom: ($caret-width - $border-width) solid transparent;
+        }
+    }
+}
+
+///让列表项等分http://sassmeister.com/gist/8e46b4c77f454e0c1cac
+///@param {[string]} $way [table] 模拟table等分 [flex] 使用flexbox布局等 [other] 不编译
+///@param {[$string]} $children [li] 默认值为li [other] 可以取div,p,a,span,strong
+%flexbox{
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  > *:not(.flexbox) {
+      display: block;
+  }
+}
+
+%equalflex {
+  -webkit-box-flex: 1;
+  -webkit-flex: 1;
+  flex: 1;
+  // text-align: center;
+}
+%table-layout{
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+
+%table-cell{
+  display: table-cell;
+  width: 1%;
+  text-align: center;
+}
+@mixin equal-parts($way:table, $children: li) {
+    @if $way==table {
+        @extend %table-layout;
+        $childrenEle: li div p a span strong;
+        @if index($childrenEle, $children) {
+            #{$children} {
+                @extend %table-cell;
+            }
+        }
+        @else {
+            .#{$children} {
+                @extend %table-cell;
+            }
+        }
+    }
+    @else if $way==flex {
+        @extend %flexbox;
+        $childrenEle: li div p a span strong;
+        @if index($childrenEle, $children) {
+            #{$children} {
+                @extend %equalflex;
+            }
+        }
+        @else {
+            .#{$children} {
+                @extend %equalflex;
+            }
+        }
+    }
+    @else {
+        @warn "You have to put #{$way} value is set to the table or flex! "
+    }
+}
+
+@mixin inline-block($alignment: middle, $support-for-ie:true) {
+    display: inline-block;
+    @if $alignment and $alignment !=none {
+        vertical-align: $alignment;
+    }
+    @if $support-for-ie {
+        *vertical-align: auto;
+        zoom: 1;
+        *display: inline;
+    }
+}
+
+// ======================Use==================
+// .inline-block{
+//   @include inline-block(top,false);
+// }
+// =======================Output================
+// .inline-block {
+//   display: inline-block;
+//   vertical-align: top;
+// }
+// ============================================
+//Thanks:http://paranoida.com/　by @Rafal Bromirski (http://twitter.com/paranoida)
+//Resolution: http://screensiz.es/tablet
+//iPhone and iPad Media Queries:http://www.stephen.io/mediaqueries/
+//Screen
+//@media screen and (min-width ...) and (max-width ...){...}
+@mixin screen($resMin, $resMax) {
+    @media screen and (min-width: $resMin) and (max-width: $resMax) {
+        @content;
+    }
+}
+
+//@media screen and (max-width ...){...}
+@mixin max-screen($res) {
+    @media screen and (max-width: $res) {
+        @content;
+    }
+}
+
+//@media screen and (min-width ...){...}
+@mixin min-screen($res) {
+    @media screen and (min-width: $res) {
+        @content;
+    }
+}
+
+//@media screen and (min-height ...) and (max-height ...){...}
+@mixin screen-height($resMin, $resMax) {
+    @media screen and (min-height: $resMin) and (max-height: $resMax) {
+        @content;
+    }
+}
+
+//@media screen and (max-height ...){...}
+@mixin max-screen-height($res) {
+    @media screen and (max-height: $res) {
+        @content;
+    }
+}
+
+//@media screen and (min-height ...){...}
+@mixin min-screen-height($res) {
+    @media screen and (min-height: $res) {
+        @content;
+    }
+}
+
+// ==================================Use=============================
+// .container {
+//   width: 960px;
+//   @include screen(768px, 1024px){
+//     width:980px;
+//   }
+//   @include min-screen(1200px){
+//     width: 1180px;
+//   }
+//   @include max-screen(480px){
+//     width: 100%;
+//   }
+// }
+// ====================================Output==========================
+// .container {
+//   width: 960px;
+// }
+// @media screen and (min-width: 768px) and (max-width: 1024px) {
+//   .container {
+//     width: 980px;
+//   }
+// }
+// @media screen and (min-width: 1200px) {
+//   .container {
+//     width: 1180px;
+//   }
+// }
+// @media screen and (max-width: 480px) {
+//   .container {
+//     width: 100%;
+//   }
+// }
+// ====================================================================
+//hdpi
+// Based on bourbon hidpi-media-queries file (https://github.com/thoughtbot/bourbon/blob/master/app/assets/stylesheets/css3/_hidpi-media-query.scss)
+// HiDPI mixin. Default value set to 1.3 to target Google Nexus 7 (http://bjango.com/articles/min-device-pixel-ratio/)
+@mixin hidpi($ratio: 1.3) {
+    @media only screen and (-webkit-min-device-pixel-ratio: $ratio), only screen and (min--moz-device-pixel-ratio: $ratio), only screen and (-o-min-device-pixel-ratio: #{$ratio}/1), only screen and (min-resolution: #{round($ratio*96)}dpi), only screen and (min-resolution: #{$ratio}dppx) {
+        @content;
+    }
+}
+
+@mixin retina-image($filename, $background-size, $ratio:1.3, $extension: png, $retina-filename: null, $retina-suffix: _2x, $asset-pipeline: false) {
+    @if $asset-pipeline {
+        background-image: image-url("#{$filename}.#{$extension}");
+    }
+    @else {
+        background-image: url("#{$filename}.#{$extension}");
+    }
+    @include hidpi($ratio) {
+        @if $asset-pipeline {
+            @if $retina-filename {
+                background-image: image-url("#{$retina-filename}.#{$extension}");
+            }
+            @else {
+                background-image: image-url("#{$filename}#{$retina-suffix}.#{$extension}");
+            }
+        }
+        @else {
+            @if $retina-filename {
+                background-image: url("#{$retina-filename}.#{$extension}");
+            }
+            @else {
+                background-image: url("#{$filename}#{$retina-suffix}.#{$extension}");
+            }
+        }
+        background-size: $background-size;
+    }
+}
+
+// ==================================Use=================================
+// .logo {
+//   @include retina-image(logo,40px 40px);
+// }
+// ===================================Output===============================
+// .logo {
+//   background-image: url("logo.png");
+// }
+// @media only screen and (-webkit-min-device-pixel-ratio: 1.3), only screen and (min--moz-device-pixel-ratio: 1.3), only screen and (-o-min-device-pixel-ratio: 1.3 / 1), only screen and (min-resolution: 125dpi), only screen and (min-resolution: 1.3dppx) {
+//   .logo {
+//     background-image: url("logo_2x.png");
+//     background-size: 40px 40px;
+//   }
+// }
+// =======================================================================
+//iPhone
+//iPhone6
+@mixin iphone6($orientation: all) {
+    $deviceMinWidth: 375px;
+    $deviceMaxWidth: 667px;
+    $deviceMinPixelRatio: 2;
+    @if $orientation==all {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-min-device-pixel-ratio: $deviceMinPixelRatio) {
+            @content;
+        }
+    }
+    @else {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-min-device-pixel-ratio: $deviceMinPixelRatio) and (orientation: $orientation) {
+            @content;
+        }
+    }
+}
+
+// =====================================Use===================================
+//.iphone6 {
+//  //portrait and landscape
+//  @include iphone6(){
+//    width: 100px;
+//    height: 100px;
+//  }
+//  //portrait (竖屏)
+//  @include iphone6(portrait){
+//    width: 200px;
+//    height: 200px;
+//  }
+//  //landscape（横屏）
+//  @include iphone6(landscape){
+//    width: 300px;
+//    height: 300px;
+//  }
+//}
+// =====================================Output===================================
+// @media only screen and (min-device-width: 375px) and (max-device-width: 667px) and (-webkit-min-device-pixel-ratio: 2) {
+//   .iphone6 {
+//     width: 100px;
+//     height: 100px;
+//   }
+// }
+// @media only screen and (min-device-width: 375px) and (max-device-width: 667px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait) {
+//   .iphone6 {
+//     width: 200px;
+//     height: 200px;
+//   }
+// }
+// @media only screen and (min-device-width: 375px) and (max-device-width: 667px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: landscape) {
+//   .iphone6 {
+//     width: 300px;
+//     height: 300px;
+//   }
+// }
+//iPhone6plus
+@mixin iphone6plus($orientation: all) {
+    $deviceMinWidth: 414px;
+    $deviceMaxWidth: 736px;
+    $deviceMinPixelRatio: 3;
+    @if $orientation==all {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-min-device-pixel-ratio: $deviceMinPixelRatio) {
+            @content;
+        }
+    }
+    @else {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-min-device-pixel-ratio: $deviceMinPixelRatio) and (orientation: $orientation) {
+            @content;
+        }
+    }
+}
+
+// =====================================Use===================================
+//.iphone6plus {
+//  //portrait and landscape
+//  @include iphone6plus(){
+//    width: 100px;
+//    height: 100px;
+//  }
+//  //portrait (竖屏)
+//  @include iphone6plus(portrait){
+//    width: 200px;
+//    height: 200px;
+//  }
+//  //landscape（横屏）
+//  @include iphone6plus(landscape){
+//    width: 300px;
+//    height: 300px;
+//  }
+//}
+// =====================================Output==================================
+//@media only screen and (min-device-width: 414px) and (max-device-width: 736px) and (-webkit-min-device-pixel-ratio: 3) {
+//  .iphone6plus {
+//    width: 100px;
+//    height: 100px;
+//  }
+//}
+//@media only screen and (min-device-width: 414px) and (max-device-width: 736px) and (-webkit-min-device-pixel-ratio: 3) and (orientation: portrait) {
+//  .iphone6plus {
+//    width: 200px;
+//    height: 200px;
+//  }
+//}
+//@media only screen and (min-device-width: 414px) and (max-device-width: 736px) and (-webkit-min-device-pixel-ratio: 3) and (orientation: landscape) {
+//  .iphone6plus {
+//    width: 300px;
+//    height: 300px;
+//  }
+//}
+//iPhone5
+@mixin iphone5($orientation: all) {
+    $deviceMinWidth: 320px;
+    $deviceMaxWidth: 568px;
+    $devicePixelRatio: 2;
+    $deviceAspectRatio: '40/71';
+    @if $orientation==all {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-device-pixel-ratio: $devicePixelRatio) and (device-aspect-ratio: $deviceAspectRatio) {
+            @content;
+        }
+    }
+    @else {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-device-pixel-ratio: $devicePixelRatio) and (device-aspect-ratio: $deviceAspectRatio) and (orientation:#{$orientation}) {
+            @content;
+        }
+    }
+}
+
+// =====================================Use===================================
+// .iphone5 {
+//   //portrait and landscape
+//   @include iphone5(){
+//     width: 98%;
+//     padding-left: 1%;
+//     padding-right:1%;
+//   }
+//   //portrait (竖屏)
+//   @include iphone5(portrait){
+//     width: 100%;
+//   }
+//   //landscape（横屏）
+//   @include iphone5(landscape){
+//    width: 95%;
+//    padding-left: 2.5%;
+//    padding-right: 2.5%;
+//   }
+// }
+// =====================================Output==================================
+// @media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-device-pixel-ratio: 2) and (device-aspect-ratio: 40 / 71) {
+//   .iphone5 {
+//     width: 98%;
+//     padding-left: 1%;
+//     padding-right: 1%;
+//   }
+// }
+// @media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-device-pixel-ratio: 2) and (device-aspect-ratio: 40 / 71) and (orientation: portrait) {
+//   .iphone5 {
+//     width: 100%;
+//   }
+// }
+// @media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-device-pixel-ratio: 2) and (device-aspect-ratio: 40 / 71) and (orientation: landscape) {
+//   .iphone5 {
+//     width: 95%;
+//     padding-left: 2.5%;
+//     padding-right: 2.5%;
+//   }
+// }
+// ================================================================================
+//iPhone4
+@mixin iphone4($orientation: all) {
+    $deviceMinWidth: 320px;
+    $deviceMaxWidth: 480px;
+    $devicePixelRatio: 2;
+    $deviceAspectRatio: '2/3';
+    @if $orientation==all {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-device-pixel-ratio: $devicePixelRatio) and (device-aspect-ratio: $deviceAspectRatio) {
+            @content;
+        }
+    }
+    @else {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-device-pixel-ratio: $devicePixelRatio) and (device-aspect-ratio: 2/3) and (orientation:#{$orientation}) {
+            @content;
+        }
+    }
+}
+
+// =====================================Use======================================
+// .iphone4{
+//   @include iphone4{
+//     background:red;
+//   }
+//   @include iphone4(portrait){
+//     background:orange;
+//   }
+//   @include iphone4(landscape){
+//     background:green;
+//   }
+// }
+// =====================================Output====================================
+// @media only screen and (min-device-width: 320px) and (max-device-width: 480px) and (-webkit-device-pixel-ratio: 2) and (device-aspect-ratio: 2 / 3) {
+//   .iphone4 {
+//     background: red;
+//   }
+// }
+// @media only screen and (min-device-width: 320px) and (max-device-width: 480px) and (-webkit-device-pixel-ratio: 2) and (device-aspect-ratio: 2 / 3) and (orientation: portrait) {
+//   .iphone4 {
+//     background: orange;
+//   }
+// }
+// @media only screen and (min-device-width: 320px) and (max-device-width: 480px) and (-webkit-device-pixel-ratio: 2) and (device-aspect-ratio: 2 / 3) and (orientation: landscape) {
+//   .iphone4 {
+//     background: green;
+//   }
+// }
+// ===============================================================================
+//iPhone3
+@mixin iphone3($orientation: all) {
+    $deviceMinWidth: 320px;
+    $deviceMaxWidth: 480px;
+    $devicePixelRatio: 1;
+    @if $orientation==all {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-device-pixel-ratio: $devicePixelRatio) {
+            @content;
+        }
+    }
+    @else {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-device-pixel-ratio: $devicePixelRatio) and (orientation:#{$orientation}) {
+            @content;
+        }
+    }
+}
+
+// /*===================================Use=========================================
+// .iphone3 {
+//   @include iphone3{
+//     color:blue;
+//   }
+//   @include iphone3(portrait){
+//     color:orange; 
+//   }
+//   @include iphone3(landscape){
+//     color:green;
+//   }
+// }
+// =====================================Output======================================
+// @media only screen and (min-device-width: 320px) and (max-device-width: 480px) and (-webkit-device-pixel-ratio: 1) {
+//   .iphone3 {
+//     color: blue;
+//   }
+// }
+// @media only screen and (min-device-width: 320px) and (max-device-width: 480px) and (-webkit-device-pixel-ratio: 1) and (orientation: portrait) {
+//   .iphone3 {
+//     color: orange;
+//   }
+// }
+// @media only screen and (min-device-width: 320px) and (max-device-width: 480px) and (-webkit-device-pixel-ratio: 1) and (orientation: landscape) {
+//   .iphone3 {
+//     color: green;
+//   }
+// }
+// ================================================================================*/
+//iPad All
+@mixin ipad($orientation: all) {
+    $deviceMinWidth: 768px;
+    $deviceMaxWidth: 1024px;
+    @if $orientation==all {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) {
+            @content;
+        }
+    }
+    @else {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (orientation:#{$orientation}) {
+            @content;
+        }
+    }
+}
+
+// /*=====================================Use========================================
+// .ipad-all {
+//   @include ipad{
+//     color:green;
+//   }
+//   @include ipad(portrait){
+//     color:yellow;
+//   }
+//   @include ipad(landscape){
+//     color:orange;
+//   }
+// }
+// ======================================Output======================================
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+//   .ipad-all {
+//     color: green;
+//   }
+// }
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: portrait) {
+//   .ipad-all {
+//     color: yellow;
+//   }
+// }
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: landscape) {
+//   .ipad-all {
+//     color: orange;
+//   }
+// }
+// =================================================================================*/
+//iPad Mini
+@mixin ipad-mini($orientation: all) {
+    $deviceMinWidth: 768px;
+    $deviceMaxWidth: 1024px;
+    $devicePixelRatio: 1;
+    @if $orientation==all {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-min-device-pixel-ratio: $devicePixelRatio) {
+            @content;
+        }
+    }
+    @else {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-min-device-pixel-ratio: $devicePixelRatio) and (orientation:#{$orientation}) {
+            @content;
+        }
+    }
+}
+
+// /*=====================================Use========================================
+// .ipad-mini{
+//   @include ipad-mini{
+//     color:blue;
+//   }
+//   @include ipad-mini(portrait){
+//     color:yellow;
+//   }
+//   @include ipad-mini(landscape){
+//     color:green;
+//   }
+// }
+// =======================================Output=====================================
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 1) {
+//   .ipad-mini {
+//     color: blue;
+//   }
+// }
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 1) and (orientation: portrait) {
+//   .ipad-mini {
+//     color: yellow;
+//   }
+// }
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 1) and (orientation: landscape) {
+//   .ipad-mini {
+//     color: green;
+//   }
+// }
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) {
+//   .ipad-retina {
+//     color: orange;
+//   }
+// }
+// ==================================================================================*/
+//iPad Retina
+@mixin ipad-retina($orientation: all) {
+    $deviceMinWidth: 768px;
+    $deviceMaxWidth: 1024px;
+    $devicePixelRatio: 2;
+    @if $orientation==all {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-min-device-pixel-ratio: $devicePixelRatio) {
+            @content;
+        }
+    }
+    @else {
+        @media only screen and (min-device-width: $deviceMinWidth) and (max-device-width: $deviceMaxWidth) and (-webkit-min-device-pixel-ratio: $devicePixelRatio) and (orientation:#{$orientation}) {
+            @content;
+        }
+    }
+}
+
+// /*================================Use==============================================
+// .ipad-retina {
+//   @include ipad-retina{
+//     color:orange;
+//   }
+//   @include ipad-retina(portrait){
+//     color:yellow;
+//   }
+//   @include ipad-retina(landscape){
+//     color:blue;
+//   }
+// }
+// ==================================Output===========================================
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) {
+//   .ipad-retina {
+//     color: orange;
+//   }
+// }
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait) {
+//   .ipad-retina {
+//     color: yellow;
+//   }
+// }
+// @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: landscape) {
+//   .ipad-retina {
+//     color: blue;
+//   }
+// }
+// ==================================================================================*/
+/// Select all children from the first to `$num`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin first($num) {
+    @if $num==1 {
+        &:first-child {
+            @content;
+        }
+    }
+    @else {
+        &:nth-child(-n + #{$num}) {
+            @content;
+        }
+    }
+}
+
+/// Select all children from the last to `$num`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin last($num) {
+    &:nth-last-child(-n + #{$num}) {
+        @content;
+    }
+}
+
+/// Select all children after the first to `$num`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin after-first($num) {
+    &:nth-child(n + #{$num + 1}) {
+        @content;
+    }
+}
+
+/// Select all children before `$num` from the last.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin from-end($num) {
+    &:nth-last-child(#{$num}) {
+        @content;
+    }
+}
+
+/// Select all children between `$first` and `$last`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin between($first,
+$last) {
+    &:nth-child(n + #{$first}):nth-child(-n + #{$last}) {
+        @content;
+    }
+}
+
+/// Select all even children between `$first` and `$last`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin even-between($first,
+$last) {
+    &:nth-child(even):nth-child(n + #{$first}):nth-child(-n + #{$last}) {
+        @content;
+    }
+}
+
+/// Select all odd children between `$first` and `$last`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin odd-between($first,
+$last) {
+    &:nth-child(odd):nth-child(n + #{$first}):nth-child(-n + #{$last}) {
+        @content;
+    }
+}
+
+/// Select all `$num` children between `$first` and `$last`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin n-between($num,
+$first,
+$last) {
+    &:nth-child(#{$num}n):nth-child(n + #{$first}):nth-child(-n + #{$last}) {
+        @content;
+    }
+}
+
+/// Select all children but `$num`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin all-but($num) {
+    &:not(:nth-child(#{$num})) {
+        @content;
+    }
+}
+
+/// Select children each `$num`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+/// @alias every
+@mixin each($num) {
+    &:nth-child(#{$num}n) {
+        @content;
+    }
+}
+
+/// Select children each `$num`.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin every($num) {
+    &:nth-child(#{$num}n) {
+        @content;
+    }
+}
+
+/// Select the `$num` child from the start and the `$num` child from the last.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin from-first-last($num) {
+    &:nth-child(#{$num}),
+    &:nth-last-child(#{$num}) {
+        @content;
+    }
+}
+
+/// Select the item in the middle of `$num` child. Only works with odd number
+/// chain.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin middle($num) {
+    &:nth-child(#{round($num / 2)}) {
+        @content;
+    }
+}
+
+/// Select all children between the `$num` first and the `$num` last.
+/// @group with-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - id of the child
+@mixin all-but-first-last($num) {
+    &:nth-child(n + #{$num}):nth-last-child(n + #{$num}) {
+        @content;
+    }
+}
+
+/// This quantity-query mixin will only select the first of `$limit` items. It will not
+/// work if there is not as much as item as you set in `$limit`.
+/// @group Quantity queries
+/// @param {number} $limit
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin first-of($limit) {
+    &:nth-last-child(#{$limit}):first-child {
+        @content;
+    }
+}
+
+/// This quantity-query mixin will only select the last of `$limit` items. It will not
+/// if there is not as much as item as you set in `$limit`.
+/// @group Quantity queries
+/// @param {number} $limit
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin last-of($limit) {
+    &:nth-of-type(#{$limit}):nth-last-of-type(1) {
+        @content;
+    }
+}
+
+/// This quantity-query mixin will select every items if there is at least `$num` items. It will not
+/// if there is not as much as item as you set in `$num`.
+/// @group Quantity queries
+/// @param {number} $limit
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin at-least($num) {
+    $selector: &;
+    $child: nth(nth($selector, -1), -1);
+    &:nth-last-child(n + #{$num}),
+    &:nth-last-child(n + #{$num}) ~ #{$child} {
+        @content;
+    }
+}
+
+/// This quantity-query mixin will select every items if there is at most `$num` items. It will not
+/// if there is not as much as item as you set in `$num`.
+/// @group Quantity queries
+/// @param {number} $limit
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin at-most($num) {
+    $selector: &;
+    $child: nth(nth($selector, -1), -1);
+    &:nth-last-child(-n + #{$num}):first-child,
+    &:nth-last-child(-n + #{$num}):first-child ~ #{$child} {
+        @content;
+    }
+}
+
+/// This quantity-query mixin will select every items only if there is between `$min` and `$max` items.
+/// @group Quantity queries
+/// @param {number} $limit
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin in-between($min,
+$max) {
+    $selector: &;
+    $child: nth(nth($selector, -1), -1);
+    &:nth-last-child(n + #{$min}):nth-last-child(-n + #{$max}):first-child,
+    &:nth-last-child(n + #{$min}):nth-last-child(-n + #{$max}):first-child ~ #{$child} {
+        @content;
+    }
+}
+
+/// Select the first exact child
+/// @group no-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin first-child() {
+    &:first-of-type {
+        @content
+    }
+}
+
+/// Select the last exact child
+/// @group no-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin last-child() {
+    &:last-of-type {
+        @content
+    }
+}
+
+/// Select all even children.
+/// @group no-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin even() {
+    &:nth-child(even) {
+        @content;
+    }
+}
+
+/// Select all odd children.
+/// @group no-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin odd() {
+    &:nth-child(odd) {
+        @content;
+    }
+}
+
+/// Select only the first and last child.
+/// @group no-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin first-last() {
+    &:first-child,
+    &:last-child {
+        @content;
+    }
+}
+
+/// Will only select the child if it’s unique.
+/// @group no-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @alias only
+@mixin unique() {
+    &:only-child {
+        @content;
+    }
+}
+
+/// Will only select the child if it’s unique.
+/// @group no-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin only() {
+    &:only-child {
+        @content;
+    }
+}
+
+/// Will only select children if they are not unique. Meaning if there is at
+/// least 2 children, the style is applied.
+/// @group no-arguments
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+@mixin not-unique() {
+    &:not(:only-child) {
+        @content;
+    }
+}
+
+/// This mixin is used to automatically sort z-index in numerical order. But it
+/// can also sort them in anti-numerical order, depending the parameters you use.
+/// @group using functions
+/// @content [Write the style you want to apply to the children, and it will be added within the @content directive]
+/// @param {number} $num - Number of children
+/// @param {string} $direction [forward] - Direction of the sort
+/// @param {number} $index [0] - Index of the sorting
+@mixin child-index($num,
+$direction: 'forward',
+$index: 0) {
+    @for $i from 1 through $num {
+        @if ($direction=='forward') {
+            &:nth-child(#{$i}) {
+                z-index: order-index($i, $index);
+                @content;
+            }
+        }
+        @else if ($direction=='backward') {
+            &:nth-last-child(#{$i}) {
+                z-index: order-index($i, $index);
+                @content;
+            }
+        }
+    }
+}
+
+/// Used by the child-index mixin. It will returned the proper sorted numbers
+/// depending on the `$index` value.
+/// @access private
+/// @param {number} $num - Number of children
+/// @param {number} $index - Index of the sorting
+@function order-index($i,
+$index) {
+    @return ($index + $i);
+}
+
+
+
+
+/* ----------------------------------- //
+//      CSS Hacks Mixins for Sass
+// ----------------------------------- //
+
+    How to use:
+
+    @include [Mixin_Name]( 'selector', (property: value) )
+
+    Example:
+
+    @include only_ie9( '.my_element', (color: red) )
+    @include only_ff28_above( '.my_element', (
+        background-color: green,
+        display: flex,
+        margin: 2em,
+    ))
+
+    Tips:
+      - Use firefox mixins before IE mixins. Sometimes Firefox wants to precess the IE css but it can't and skips it's own CSS!
+
+// ----------------------------------- //
+
+    List of Mixins:
+
+    only_ff
+    only_ff2
+    only_ff2_above
+    only_ff3_above
+    only_ff6_above
+    only_ff16_above
+    only_ff21_above
+    only_ff24_above
+    only_ff25_above
+    only_ff26_above
+    only_ff27_above
+    only_ff28_above
+    only_ff30_above
+    only_webkit
+    only_chrome
+    only_safari
+    only_safari9
+    only_ios
+    only_safari_no_ios
+    only_opera9_safari2
+    only_opera
+    only_opera11
+    only_edge
+    only_ie6
+    only_ie7
+    only_ie7_below
+    only_ie8
+    only_ie8_below
+    only_ie9
+    only_ie9_below
+    only_ie10_above
+    only_ie11
+    only_ie11_above
+    no_ie6
+    only_ie9_saf4_above
+    no_ie_safari6
+
+// ----------------------------------- */
+
+
+/* ----------------------------------- //
+//          Firefox CSS Hacks
+// ----------------------------------- */
+
+
+/*--- Only Firefox ---*/
+@mixin only_ff($selector, $map){
+    @-moz-document url-prefix() {
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox 1.5 and Firefox 2 ---*/
+@mixin only_ff2($selector, $map){
+    body:empty #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 2 ---*/
+@mixin only_ff2_above($selector, $map){
+    @at-root{
+        body:last-child & #{$selector} , x:-moz-any-link, x:default{
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 3 ---*/
+@mixin only_ff3_above($selector, $map){
+    @at-root{
+        & #{$selector} , x:-moz-any-link, x:default{
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 6 ---*/
+@mixin only_ff6_above($selector, $map){
+    _::-moz-progress-bar, body:last-child #{$selector} { 
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 16 ---*/
+@mixin only_ff16_above($selector, $map){
+    @supports (-moz-appearance:meterbar){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 21 ---*/
+@mixin only_ff21_above($selector, $map){
+    _::-moz-range-track, body:last-child #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 24 ---*/
+@mixin only_ff24_above($selector, $map){
+    @supports (-moz-appearance:meterbar) and (cursor:zoom-in){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 25 ---*/
+@mixin only_ff25_above($selector, $map){
+    @supports (-moz-appearance:meterbar) and (background-attachment:local){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 26 ---*/
+@mixin only_ff26_above($selector, $map){
+    @supports (-moz-appearance:meterbar) and (image-orientation:90deg){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 27 ---*/
+@mixin only_ff27_above($selector, $map){
+    @supports (-moz-appearance:meterbar) and (all:initial){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 28 ---*/
+@mixin only_ff28_above($selector, $map){
+    @supports (-moz-appearance:meterbar) and (list-style-type:japanese-formal){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Firefox ≥ 30 ---*/
+@mixin only_ff30_above($selector, $map){
+    @supports (-moz-appearance:meterbar) and (background-blend-mode:difference,normal){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+
+
+/* ----------------------------------- //
+//          Webkit CSS Hacks
+// ----------------------------------- */
+
+
+/*--- Only Webkit (Chrome, Safari, Opera ≥ 14) ---*/
+@mixin only_webkit($selector, $map){
+    .selector:not(*:root) {
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Chrome 28+, Opera ≥ 14 ---*/
+@mixin only_chrome($selector, $map){
+    @media all and (-webkit-min-device-pixel-ratio:0) and (min-resolution: .001dpcm) {
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only Safari ≥ 6.1 ---*/
+// Dark magic, Don't touch
+@function sf_func1($selector, $property) {
+    @return '@media screen and(min-color-index:0)and(-webkit-min-device-pixel-ratio:0){@media{'+& $selector+'{'+$property;
+}
+@function sf_func2($value) {
+    @return $value+'}}}';
+}
+@mixin only_safari($selector, $map){
+    @at-root{
+        @each $property, $value in ($map) {
+            #{sf_func1($selector, $property)}: #{sf_func2($value)};
+        }
+    }
+}
+
+/*--- Only Safari ≥ 9 ---*/
+@mixin only_safari9($selector, $map){
+    @supports (overflow:-webkit-marquee) and (justify-content:inherit){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only iOS Safari ≥ 9 ---*/
+@mixin only_ios($selector, $map){
+    @supports (-webkit-text-size-adjust:none) and (not (-ms-accelerator:true)) and (not (-moz-appearance:none)){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+/*--- Only Safari ≥ 9 (Non iOS) ---*/
+@mixin only_safari_no_ios($selector, $map){
+    _:-webkit-full-screen:not(:root:root),#{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+/*--- Only Opera ≤ 9.27, Safari ≤ 2 ---*/
+@mixin only_opera9_safari2($selector, $map){
+    #{'html:first-child '} #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+
+
+/* ----------------------------------- //
+//           Opera CSS Hacks
+// ----------------------------------- */
+
+
+/*--- Only Opera ≥ 9.5 ---*/
+@mixin only_opera($selector, $map){
+    _:-o-prefocus, body:last-child #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+/*--- Only Opera ≤ 11 ---*/
+@mixin only_opera11($selector, $map){
+    @media all and (-webkit-min-device-pixel-ratio:10000), not all and (-webkit-min-device-pixel-ratio:0){
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/* ----------------------------------- //
+//     Edge CSS Hacks
+// ----------------------------------- */
+
+@mixin only_edge($selector, $map){
+    @supports (-ms-accelerator:true) {
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/* ----------------------------------- //
+//     Internet Explorer CSS Hacks
+// ----------------------------------- */
+
+/*--- Only IE ≤ 6 ---*/
+@mixin only_ie6($selector, $map){
+    #{$selector} {
+        #{'* html '} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only IE7 ---*/
+@mixin only_ie7($selector, $map){
+    #{$selector} {
+        #{'*+html '} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only IE ≤ 7 ---*/
+@mixin only_ie7_below($selector, $map){
+    #{$selector} {
+        #{'*'} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only IE8 ---*/
+@mixin only_ie8($selector, $map){
+    #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value+\0#{'/'};
+        }
+    }
+}
+
+/*--- Only IE ≤ 8 ---*/
+@mixin only_ie8_below($selector, $map){
+    #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value+#{\9};
+        }
+    }
+}
+
+/*--- Only IE9 ---*/
+@mixin only_ie9($selector, $map){
+    #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value+#{\9\0};
+        }
+    }
+}
+
+/*--- Only IE ≤ 9 ---*/
+@mixin only_ie9_below($selector, $map){
+    html[lang=\en] #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+/*--- Only IE10 ---*/
+@mixin only_ie10_above($selector, $map){
+    @media all and (-ms-high-contrast:none){
+        *::-ms-backdrop, #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/*--- Only IE ≤ 11 ---*/
+@mixin only_ie11($selector, $map){
+    @media all and (-ms-high-contrast:none){
+        *::-ms-backdrop, #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value+\0;
+            }
+        }
+    }
+}
+
+/*--- Only IE ≥ 11 ---*/
+@mixin only_ie11_above($selector, $map){
+    #{'_:-ms-fullscreen, :root '} #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+/*--- Anything but IE6 ---*/
+@mixin no_ie6($selector, $map){
+    #{'html>body '} #{$selector} {
+        @each $property, $value in ($map) {
+            #{$property}: $value;
+        }
+    }
+}
+
+/*--- Only IE ≥ 9, safari4, android ≥ 2.3 ---*/
+@mixin only_ie9_saf4_above($selector, $map){
+    @media screen and (min-width:0\0) {
+        #{$selector} {
+            @each $property, $value in ($map) {
+                #{$property}: $value;
+            }
+        }
+    }
+}
+
+/* ----------------------------------- //
+//           Other CSS Hacks
+// ----------------------------------- */
+
+/*--- Everything but IE and Safari ≤ 6 ---*/
+@mixin no_ie_safari6($selector, $map){
+    @media screen {
+        @media (min-width: 0px) {
+            #{$selector} {
+                @each $property, $value in ($map) {
+                    #{$property}: $value;
+                }
+            }
+        }
+    }
+}
+
+
+
+/**
+ * 兼容IE8的渐变方法和兼容IE8的背景rgba方法
+ 
+ * example:
+ =======================Use=========================
+ .section {
+    @include linear-gradient(#000000,#ffffff);
+ }
+ .rgba {
+     @include bgrgba(rgba(0,0,0,.5));
+ }
+
+ =======================Output======================
+.section {
+    background-color: #fff;
+    background-image: -webkit-linear-gradient(top, #000, #fff);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#000), to(#fff));
+    background-image: linear-gradient(180deg, #000 0, #fff);
+    filter: progid: DXImageTransform.Microsoft.gradient(startColorstr='#FF000000', endColorstr='#FFFFFFFF', GradientType=0)
+}
+
+.rgba {
+    background: rgba(0, 0, 0, .5);
+    filter: progid: DXImageTransform.Microsoft.gradient(startColorstr='#80000000', endColorstr='#80000000', GradientType=0)
+}
+ */
+@mixin linear-gradient($color1, $color2, $start: 0%, $end: 100%) {
+  background-color: $color2;
+  background-image: -moz-linear-gradient(top, $color1 $start, $color2 $end); /* FF3.6+ */
+  background-image: -webkit-linear-gradient(top, $color1 $start, $color2 $end); /* Chrome10+,Safari5.1+ */
+  background-image: -o-linear-gradient(top, $color1 $start, $color2 $end); /* Opera 11.10+ */
+  background-image: -ms-linear-gradient(top, $color1 $start, $color2 $end); /* IE10+ */
+  background-image: linear-gradient(to bottom, $color1 $start, $color2 $end); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#{ie-hex-str($color1)}', endColorstr='#{ie-hex-str($color2)}',GradientType=0 ); /* IE6-9 */
+}
+
+@mixin bgrgba($rgba) {
+    background:$rgba;
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#{ie-hex-str($rgba)}', endColorstr='#{ie-hex-str($rgba)}',GradientType=0 );
+    
+}
+
+/**
+ * 定义placeholder样式
+ ===============Use=============
+ @include placeholder {
+     color:#ccc;
+ }
+ */
+@mixin placeholder {
+    &::-webkit-input-placeholder {
+       @content;
+    }
+
+    &:-moz-placeholder {
+       @content;  
+    }
+
+    &::-moz-placeholder { 
+       @content;  
+    }
+
+    &:-ms-input-placeholder {  
+       @content;  
+    }
+}
+
+/**
+ * 定义iOS弹性滚动
+ =================Use==============
+ .box {
+     @include touch-scroll;
+ }
+ 
+ */
+@mixin touch-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+}
